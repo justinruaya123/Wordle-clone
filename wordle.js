@@ -1,29 +1,31 @@
 "use strict";
+//Global variables
 const appDiv = document.getElementById('app');
 let elements = [];
-function initialize() {
-    if (appDiv != null) {
-        //Elements
-        const sortedBox = document.createElement('input');
-        sortedBox.setAttribute('type', 'textbox');
-        sortedBox.setAttribute('id', 'sortedBox');
-        elements.push(sortedBox);
-        const enterButton = document.createElement('input');
-        enterButton.setAttribute('type', 'button');
-        enterButton.setAttribute('value', 'Fetch');
-        enterButton.setAttribute('id', 'enterButton');
-        elements.push(enterButton);
-        //End elements
-        enterButton.addEventListener('click', onEnterButtonClick);
-        appDiv.replaceChildren(...elements);
-    }
-}
+let word = "";
+let attempts = 0;
+// ============================== ELEMENTS ==============================
+const inputBox = document.createElement('input');
+inputBox.setAttribute('type', 'textbox');
+inputBox.setAttribute('id', 'inputBox');
+elements.push(inputBox);
+const guessBox = document.createElement('input');
+guessBox.setAttribute('type', 'textbox');
+guessBox.setAttribute('id', 'guessBox');
+const alphabet = document.createElement('p');
+alphabet.textContent = "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z";
+const guessAttempt = document.createElement('p');
+const enterButton = document.createElement('input');
+enterButton.setAttribute('type', 'button');
+enterButton.setAttribute('value', 'Fetch');
+enterButton.setAttribute('id', 'enterButton');
+enterButton.addEventListener('click', onEnterButtonClick);
+elements.push(enterButton);
+// ======================================================================
+appDiv?.replaceChildren(...elements);
+// ============================== FUNCTIONS ==============================
 function onEnterButtonClick() {
-    const sortedBox = document.getElementById('sortedBox');
-    if (sortedBox == null) {
-        return;
-    }
-    const textUrl = sortedBox.value;
+    const textUrl = inputBox.value;
     if (textUrl == "") {
         alert('No URL was specified');
         return;
@@ -31,30 +33,55 @@ function onEnterButtonClick() {
     else {
         let xhr = new XMLHttpRequest();
         xhr.open('GET', textUrl, true);
-        xhr.responseType = 'text';
-        const outputText = document.createElement('p');
-        outputText.setAttribute('id', 'outputText');
-        elements.push(outputText);
-        if (appDiv == null) {
-            return;
-        }
-        appDiv.replaceChildren(...elements);
         //onload and onerror code from https://javascript.info/xmlhttprequest
         xhr.onload = function () {
             if (xhr.status != 200) { // analyze HTTP status of the response
                 alert(`Error ${xhr.status}: ${xhr.statusText}`); // e.g. 404: Not Found
             }
             else {
-                let array = xhr.response.split("\n");
+                let array = xhr.responseText.split("\n");
                 let randomInt = Math.floor(Math.random() * array.length);
-                console.log(array[randomInt]);
+                word = array[randomInt];
+                console.log(word);
+                appDiv?.replaceChildren();
+                createGuessBox();
             }
         };
-        xhr.onerror = function () {
-            alert("Request failed");
-        };
+        xhr.onerror = function () { alert("Request failed"); };
         xhr.send();
-        //================================================================================================
     }
 }
-initialize();
+function createGuessBox() {
+    elements = [guessBox, guessAttempt, alphabet];
+    appDiv?.replaceChildren(...elements);
+    guessBox.addEventListener('keypress', onGuessBoxKeyPress);
+}
+function onGuessBoxKeyPress(event) {
+    if (event.key === 'Enter') {
+        guess();
+    }
+}
+function guess() {
+    const guess = guessBox.value.toLowerCase();
+    if (guess.length != 5) {
+        alert('Input box should have exactly five characters!');
+    }
+    else {
+        guessBox.value = "";
+        guessAttempt.textContent = guess;
+        if (guess == word) {
+            alert('Correct!');
+            guessBox.removeEventListener('keypress', onGuessBoxKeyPress);
+        }
+        else {
+            if (attempts > 4) {
+                alert(`You lose! The word is ${word}`);
+                guessBox.removeEventListener('keypress', onGuessBoxKeyPress);
+            }
+            else {
+                attempts++;
+                alert(`Incorrect! Attempts left: ${6 - attempts}`);
+            }
+        }
+    }
+}
