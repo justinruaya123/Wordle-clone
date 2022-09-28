@@ -68,21 +68,25 @@ function onEnterButtonClick() {
 }
 //================================= Events =================================
 function onKeyPress(event) {
+    pressButton(event.key);
+}
+function pressButton(key) {
     if (gameState != 1 || !canInput) {
         return;
     }
-    if (event.key == "Enter") {
+    if (key == "Enter") {
         guessAnswer();
         return;
     }
-    if (event.key == "Backspace") {
+    if (key == "Backspace") {
         popCharacter();
         return;
     }
-    if (event.key.match(/[a-zA-Z]/) && event.key.length == 1) {
-        let audio = new Audio('keypress.mp3');
-        audio.play();
-        pushCharacter(event.key);
+    if (key.match(/[a-zA-Z]/) && key.length == 1) {
+        if (pushCharacter(key)) {
+            let audio = new Audio('keypress.mp3');
+            audio.play();
+        }
     }
 }
 // ======================================================================
@@ -96,25 +100,40 @@ function guessAnswer() {
     else {
         //Valid guess
         canInput = false;
+        let colors = [];
+        let permute = [];
+        //First pass remove 
+        for (let pos = 0; pos < 5; pos++) {
+            if (guess[pos] == word[pos]) {
+                colors[pos] = "correct";
+            }
+            else {
+                permute.push(word[pos]);
+            }
+        }
+        for (let pos2 = 0; pos2 < 5; pos2++) {
+            if (colors[pos2] == "correct") {
+                continue;
+            }
+            //Remove one character in permute if it exists
+            let index = permute.indexOf(guess[pos2]);
+            if (index != -1) {
+                permute.splice(index, 1);
+                colors[pos2] = "misplaced";
+            }
+            else {
+                colors[pos2] = "incorrect";
+            }
+        }
         for (let pos = 0; pos < 5; pos++) {
             setTimeout(() => {
-                if (guess[pos] != word[pos]) {
-                    if (word.includes(guess[pos])) {
-                        setBoxState(attempts, pos, "misplaced", guess[pos]);
-                    }
-                    else {
-                        setBoxState(attempts, pos, "incorrect", guess[pos]);
-                    }
-                }
-                else {
-                    setBoxState(attempts, pos, "correct", guess[pos]);
-                }
+                setBoxState(attempts, pos, colors[pos], guess[pos]);
             }, 200 * pos);
         }
         setTimeout(() => {
             if (guess == word) {
                 gameState = 2;
-                let audio = new Audio('correct.mp3');
+                let audio = new Audio('victory.mp3');
                 audio.play();
                 document.removeEventListener('keypress', onKeyPress);
                 setTimeout(() => { heartbeat.pause(); }, 1);
@@ -165,26 +184,29 @@ function setBoxState(row, col, className, letter) {
         return;
     }
     box.textContent = letter.toUpperCase();
-    let back = document.createElement("div");
+    let back = document.createElement("span");
     back.textContent = box.textContent;
     box.appendChild(back);
     box.classList.remove("almost-defeat");
     back.classList.add(className);
     box.offsetHeight; //Flush CSS
     box?.classList.add("flip");
+    let flip = new Audio('flip.mp3');
+    flip.play();
 }
 function pushCharacter(chara) {
     if (guess.length >= 5) {
-        return;
+        return false;
     }
     let box = getBlockElement(attempts, guess.length);
     if (box == null) {
-        return;
+        return false;
     }
     box.textContent = chara.toUpperCase();
     box.classList.add("animateappear");
     box.classList.remove("animateout");
     guess += chara.toUpperCase();
+    return true;
 }
 function popCharacter() {
     if (guess.length == 0) {
@@ -204,19 +226,24 @@ function initBoard() {
     if (board == null) {
         return;
     }
+    board.className = "main";
     for (let i = 0; i < 6; i++) {
         let row = document.createElement("div");
-        row.className = "row";
+        row.className = "center";
         for (let j = 0; j < 5; j++) {
             setTimeout(() => {
-                let box = document.createElement("div");
+                let box = document.createElement("span");
                 box.setAttribute('id', `box-${i}-${j}`); //row, column
                 box.className = "nocolor";
+                box.classList.add("unselectable");
                 box.textContent = "";
                 row.appendChild(box);
                 let audio = new Audio('pop.mp3');
                 audio.playbackRate = 2;
                 audio.play();
+                if (i == 5 && j == 4) {
+                    setTimeout(() => { createKeyboard(); }, 1);
+                }
             }, j * 50 + i * 200);
         }
         board.appendChild(row);
@@ -226,4 +253,34 @@ function initBoard() {
     }, 1251);
     elements.push(board);
     appDiv?.replaceChildren(...elements);
+}
+function createKeyboard() {
+    let keyboard = document.getElementById("keyboard");
+    if (keyboard == null) {
+        return;
+    }
+    keyboard.className = "keyboard";
+    createRow(keyboardFirstRow, keyboard);
+    createRow(keyboardSecondRow, keyboard);
+    createRow(keyboardThirdRow, keyboard);
+    elements.push(keyboard);
+    appDiv?.replaceChildren(...elements);
+}
+function createRow(arr, keyboard) {
+    //foreach letter in arr
+    let row = document.createElement("div");
+    row.className = "row";
+    row.classList.add("center");
+    for (let c of arr) {
+        let key = document.createElement("span");
+        key.setAttribute('id', `key-${c}`);
+        key.className = c == ("Enter" || c == "Backspace") ? "key_enter" : "key_letter";
+        key.classList.add("unselectable");
+        key.textContent = (c == "Backspace") ? "<" : c;
+        key.addEventListener('click', () => {
+            pressButton(c);
+        });
+        row.appendChild(key);
+    }
+    keyboard.appendChild(row);
 }
