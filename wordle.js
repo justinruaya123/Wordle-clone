@@ -165,7 +165,13 @@ function setBoxState(row, col, className, letter) {
         return;
     }
     box.textContent = letter.toUpperCase();
-    box.setAttribute('class', className);
+    let back = document.createElement("div");
+    back.textContent = box.textContent;
+    box.appendChild(back);
+    box.classList.remove("almost-defeat");
+    back.classList.add(className);
+    box.offsetHeight; //Flush CSS
+    box?.classList.add("flip");
 }
 function pushCharacter(chara) {
     if (guess.length >= 5) {
@@ -176,7 +182,6 @@ function pushCharacter(chara) {
         return;
     }
     box.textContent = chara.toUpperCase();
-    //box.style.animation = "none";
     box.classList.add("animateappear");
     box.classList.remove("animateout");
     guess += chara.toUpperCase();
@@ -204,7 +209,7 @@ function initBoard() {
         row.className = "row";
         for (let j = 0; j < 5; j++) {
             setTimeout(() => {
-                let box = document.createElement("span");
+                let box = document.createElement("div");
                 box.setAttribute('id', `box-${i}-${j}`); //row, column
                 box.className = "nocolor";
                 box.textContent = "";
