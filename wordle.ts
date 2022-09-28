@@ -99,7 +99,8 @@ function guessAnswer() {
         return;
     }
     if(guess.length != 5) {
-        alert('Input box should have exactly five characters!');
+        setTimeout(() => {alert('Input box should have exactly five characters!');}, 5);
+        
     } else {
         //Valid guess
         canInput = false;
@@ -192,8 +193,37 @@ function setBoxState(row : number, col : number, className : string, letter : st
     box.offsetHeight; //Flush CSS
     box?.classList.add("flip");
     let flip = new Audio('flip.mp3');
-
     flip.play();
+
+    let key = document.getElementById(`key-${letter}`);
+    if(key == null) {
+        return;
+    }
+    if(getRank(`${className}_fade`) > getRankFromList(key.classList)) {
+        key.classList.remove("incorrect_fade");
+        key.classList.remove("misplaced_fade");
+        key.classList.add(className + "_fade");
+        key.offsetHeight; //Flush CSS
+    }
+}
+
+function getRankFromList(lst : DOMTokenList) {
+    let rank = 0;
+    for(let i = 0; i < lst.length; i++) {
+        rank = Math.max(rank, getRank(lst[i]));
+    }
+    return rank;
+}
+
+function getRank(className : string) {
+    if(className == "correct_fade") {
+        return 3;
+    } else if(className == "misplaced_fade") {
+        return 2;
+    } else if(className == "incorrect_fade") {
+        return 1;
+    }
+    return 0;
 }
 
 function pushCharacter(chara : string) {

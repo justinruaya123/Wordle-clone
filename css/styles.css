@@ -52,6 +52,8 @@ body {
     transform: rotateY(180deg) scale(-1,-1);
 }
 
+
+
 .misplaced {
   background-color: darkgoldenrod;
   color: white;
@@ -160,7 +162,6 @@ body {
   position: relative;
   align-items: center;
   justify-content: center;
-  animation: popin;
 } 
 .center {
   display: flex;
@@ -180,17 +181,19 @@ body {
 .key_letter:hover {
   background-color: rgb(240, 240, 240);
   cursor: pointer;
+  animation-duration: 0.1s;
 }
 .key_enter:hover {
   background-color: rgb(240, 240, 240);
   cursor: pointer;
+  animation-duration: 0.1s;
 }
-.key_letter:target {
-  background-color: rgb(62, 204, 33);
+.key_letter:active {
+  background-color: gold;
   cursor: pointer;
 }
-.key_enter:onclick {
-  background-color: rgb(62, 204, 33);
+.key_enter:active {
+  background-color: gold;
   cursor: pointer;
 }
 
@@ -208,14 +211,30 @@ body {
   position: relative;
   align-items: center;
   justify-content: center;
-  animation: popin;
 } 
 
 .unselectable{
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
   user-select: none;
+}
+
+
+
+
+
+.correct_fade {
+  background-color: green;
+  color: gold;
+  transition: background-color 1.5s ease;
+}
+
+.misplaced_fade {
+  background-color: darkgoldenrod;
+  color: gold;
+  transition: background-color 1.5s ease;
+}
+
+.incorrect_fade {
+  background-color: rgb(39, 37, 37);
+  color: gold;
+  transition: background-color 1.5s ease;
 }
