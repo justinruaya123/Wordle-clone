@@ -4,6 +4,11 @@ const appDiv = document.getElementById('app');
 let elements = [];
 let word = "";
 let attempts = 0;
+let guess = "";
+//Array of letters from A to Z
+const keyboardFirstRow = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'];
+const keyboardSecondRow = ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'];
+const keyboardThirdRow = ['Enter', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', 'Backspace'];
 let textUrl = "https://gist.githubusercontent.com/dracos/dd0668f281e685bad51479e5acaadb93/raw/ca9018b32e963292473841fb55fd5a62176769b5/valid-wordle-words.txt";
 /*
 GAME STATES
@@ -18,21 +23,14 @@ let canInput = false;
 const inputBox = document.createElement('input');
 inputBox.setAttribute('type', 'textbox');
 inputBox.setAttribute('id', 'inputBox');
+inputBox.setAttribute('value', textUrl); //Default URL
 elements.push(inputBox);
-const guessBox = document.createElement('input');
-guessBox.setAttribute('type', 'textbox');
-guessBox.setAttribute('id', 'guessBox');
-const alphabet = document.createElement('p');
-alphabet.textContent = "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z\n";
-const guessAttempt = document.createElement('p');
-guessAttempt.textContent = " ";
 const enterButton = document.createElement('input');
 enterButton.setAttribute('type', 'button');
-enterButton.setAttribute('value', 'Fetch');
+enterButton.setAttribute('value', 'Start Game');
 enterButton.setAttribute('id', 'enterButton');
 enterButton.addEventListener('click', onEnterButtonClick);
 elements.push(enterButton);
-elements.push(guessAttempt);
 document.addEventListener('keydown', onKeyPress);
 //Sounds
 let heartbeat = new Audio('heartbeat.mp3');
@@ -56,10 +54,10 @@ function onEnterButtonClick() {
             else {
                 let array = xhr.responseText.split("\n");
                 let randomInt = Math.floor(Math.random() * array.length);
-                word = array[randomInt];
+                word = array[randomInt].toUpperCase();
                 console.log(word);
+                elements = [];
                 appDiv?.replaceChildren();
-                createGuessBox();
                 initBoard();
                 gameState = 1;
             }
@@ -70,26 +68,32 @@ function onEnterButtonClick() {
 }
 //================================= Events =================================
 function onKeyPress(event) {
-    if (gameState != 1) {
+    if (gameState != 1 || !canInput) {
         return;
     }
-    if (event.key.match(/[a-z]/i) && event.key != "Enter" && event.key != "Backspace" && event.key != "Shift" && event.key != "Control" && event.key != "Alt") {
+    if (event.key == "Enter") {
+        guessAnswer();
+        return;
+    }
+    if (event.key == "Backspace") {
+        popCharacter();
+        return;
+    }
+    if (event.key.match(/[a-zA-Z]/) && event.key.length == 1) {
         let audio = new Audio('keypress.mp3');
         audio.play();
+        pushCharacter(event.key);
     }
 }
 // ======================================================================
-function guess() {
+function guessAnswer() {
     if (!canInput) {
         return;
     }
-    const guess = guessBox.value.toLowerCase();
     if (guess.length != 5) {
         alert('Input box should have exactly five characters!');
     }
     else {
-        guessBox.value = "";
-        guessAttempt.textContent = guess;
         //Valid guess
         canInput = false;
         for (let pos = 0; pos < 5; pos++) {
@@ -112,13 +116,13 @@ function guess() {
                 gameState = 2;
                 let audio = new Audio('correct.mp3');
                 audio.play();
-                guessBox.removeEventListener('keypress', onGuessBoxKeyPress);
+                document.removeEventListener('keypress', onKeyPress);
                 setTimeout(() => { heartbeat.pause(); }, 1);
                 setTimeout(() => { alert(`Correct! The word is indeed ${word}.`); }, 5);
             }
             else {
                 if (attempts > 4) {
-                    guessBox.removeEventListener('keypress', onGuessBoxKeyPress);
+                    document.removeEventListener('keypress', onKeyPress);
                     gameState = 3;
                     let audio = new Audio('sus.mp3');
                     audio.play();
@@ -139,6 +143,7 @@ function guess() {
                     setTimeout(() => { alert(`Incorrect! Attempts left: ${6 - attempts}`); canInput = true; }, 101);
                 }
             }
+            guess = "";
         }, 1001);
     }
 }
@@ -162,15 +167,32 @@ function setBoxState(row, col, className, letter) {
     box.textContent = letter.toUpperCase();
     box.setAttribute('class', className);
 }
-function createGuessBox() {
-    elements = [guessBox, guessAttempt, alphabet];
-    appDiv?.replaceChildren(...elements);
-    guessBox.addEventListener('keypress', onGuessBoxKeyPress);
-}
-function onGuessBoxKeyPress(event) {
-    if (event.key === 'Enter') {
-        guess();
+function pushCharacter(chara) {
+    if (guess.length >= 5) {
+        return;
     }
+    let box = getBlockElement(attempts, guess.length);
+    if (box == null) {
+        return;
+    }
+    box.textContent = chara.toUpperCase();
+    //box.style.animation = "none";
+    box.classList.add("animateappear");
+    box.classList.remove("animateout");
+    guess += chara.toUpperCase();
+}
+function popCharacter() {
+    if (guess.length == 0) {
+        return;
+    }
+    let box = getBlockElement(attempts, guess.length - 1);
+    if (box == null) {
+        return;
+    }
+    guess = guess.slice(0, -1);
+    box.classList.remove("animateappear");
+    box.classList.add("animateout");
+    box.textContent = "";
 }
 function initBoard() {
     let board = document.getElementById("board");
